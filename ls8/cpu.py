@@ -7,7 +7,16 @@ class CPU:
 
     def __init__(self):
         """Construct a new CPU."""
-        pass
+        self.reg = [0] * 8
+        self.pc = 0
+        self.ram = [0] * 256
+        # stack pointer will need an initial value
+
+    def ram_read(self, MAR):
+        return self.ram[MAR]
+
+    def ram_write(self, MAR, MDR):
+        self.ram[MAR] = MDR
 
     def load(self):
         """Load a program into memory."""
@@ -62,4 +71,4 @@ class CPU:
 
     def run(self):
         """Run the CPU."""
-        pass
+        self.trace()

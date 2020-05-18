@@ -65,6 +65,23 @@ but you'll have to implement those three above instructions first!
 * Read this whole file.
 * Skim the spec.
 
+Files:
+cpu.py - Runs the CPU. Manages operators, RAM functions, and instruction handlers.
+ls8.py - Invokes the CPU class.
+
+NOTES:
+cpu.py
+  - Our init for the CPU constructor is empty and needs to be filled out.
+  - ALU function only has one operator completed (ADD). Requires code for other operators on an as needed basis.
+  - The load() function is hardcoded and needs its temporary code replaced (Day 2 stuff).
+  - There's a trace() function that prints out the CPU state. Apparently it is helpful for debugging.
+  - Missing the core code for run() function.
+  - Missing RAM functions for read() and write()
+  - Missing instruction handlers, namely HLT, LDI, and PRN
+
+ls8.py
+  - Imports the CPU class and invokes the CPU's load and run function.
+
 ## Step 1: Add the constructor to `cpu.py`
 
 Add list properties to the `CPU` class to hold 256 bytes of memory and 8

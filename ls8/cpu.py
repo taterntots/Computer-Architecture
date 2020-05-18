@@ -2,12 +2,49 @@
 
 import sys
 
+LDI = 0b10000010
+HLT = 0b00000001
+PRN = 0b01000111
+
 class CPU:
     """Main CPU class."""
 
     def __init__(self):
         """Construct a new CPU."""
-        pass
+        self.reg = [0] * 8
+        self.pc = 0
+        self.ram = [0] * 256
+        self.running = True
+        # self.ops = {
+        #     'ADD': '10100000 00000aaa 00000bbb',
+        #     'SUB':  '10100001 00000aaa 00000bbb',
+        #     'MUL': '10100010 00000aaa 00000bbb',
+        #     'DIV':  '10100011 00000aaa 00000bbb',
+        #     'MOD':  '10100100 00000aaa 00000bbb',
+
+        #     'INC':  '01100101 00000rrr',
+        #     'DEC':  '01100110 00000rrr',
+
+        #     'CMP': '10100111 00000aaa 00000bbb',
+
+        #     'AND': '10101000 00000aaa 00000bbb',
+        #     'NOT': '01101001 00000rrr',
+        #     'OR': '10101010 00000aaa 00000bbb',
+        #     'XOR': '10101011 00000aaa 00000bbb',
+        #     'SHL': '10101100 00000aaa 00000bbb',
+        #     'SHR': '10101101 00000aaa 00000bbb'
+        # }
+        # stack pointer will need an initial value
+
+    def ram_read(self, MAR):
+        return self.ram[MAR]
+
+    def ram_write(self, MAR, MDR):
+        self.ram[MAR] = MDR
+
+    def op_hit(self, operand_a, operand_b):
+        self.running = False
+        sys.exit(1)
 
     def load(self):
         """Load a program into memory."""
@@ -62,4 +99,22 @@ class CPU:
 
     def run(self):
         """Run the CPU."""
-        pass
+        self.trace()
+
+        while self.running:
+            # IR is the instruction register
+            IR = self.ram_read(self.pc)
+
+            operand_a = self.ram_read(self.pc+1)
+            operand_b = self.ram_read(self.pc+2)
+
+            if IR == LDI:
+                self.reg[operand_a] = operand_b
+                self.pc += 3
+
+            elif IR == PRN:
+                print(self.reg[operand_a])
+                self.pc += 2 
+
+            elif IR == HLT:
+                self.running == False

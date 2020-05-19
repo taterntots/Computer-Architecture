@@ -5,6 +5,7 @@ import sys
 LDI = 0b10000010
 HLT = 0b00000001
 PRN = 0b01000111
+MUL = 0b10100010
 
 class CPU:
     """Main CPU class."""
@@ -16,9 +17,12 @@ class CPU:
         self.ram = [0] * 256
         self.running = True
         # self.ops = {
+            # LDI: 0b10000010,
+            # HLT: 0b00000001,
+            # PRN: 0b01000111,
+            # MUL: 0b10100010
         #     'ADD': '10100000 00000aaa 00000bbb',
         #     'SUB':  '10100001 00000aaa 00000bbb',
-        #     'MUL': '10100010 00000aaa 00000bbb',
         #     'DIV':  '10100011 00000aaa 00000bbb',
         #     'MOD':  '10100100 00000aaa 00000bbb',
 
@@ -51,39 +55,23 @@ class CPU:
 
         address = 0
 
-        with open(sys.argv[1]) as f:
-            for line in f:
+        with open(sys.argv[1]) as file:
+            for line in file:
                 string_val = line.split('#')[0].strip()
                 if string_val == '':
                     continue
                 else:
-                    v = int(string_val, 2)
-                    self.ram[address] = v
+                    value = int(string_val, 2)
+                    self.ram[address] = value
                     address += 1
-
-        # # For now, we've just hardcoded a program:
-
-        # program = [
-        #     # From print8.ls8
-        #     0b10000010, # LDI R0,8
-        #     0b00000000,
-        #     0b00001000,
-        #     0b01000111, # PRN R0
-        #     0b00000000,
-        #     0b00000001, # HLT
-        # ]
-
-        # for instruction in program:
-        #     self.ram[address] = instruction
-        #     address += 1
-
 
     def alu(self, op, reg_a, reg_b):
         """ALU operations."""
 
         if op == "ADD":
             self.reg[reg_a] += self.reg[reg_b]
-        #elif op == "SUB": etc
+        elif op == "MUL":
+            self.reg[reg_a] *= self.reg[reg_b]
         else:
             raise Exception("Unsupported ALU operation")
 
@@ -125,6 +113,10 @@ class CPU:
             elif IR == PRN:
                 print(self.reg[operand_a])
                 self.pc += 2 
+            
+            elif IR == MUL:
+                self.alu('MUL', operand_a, operand_b)
+                self.pc += 3
 
             elif IR == HLT:
                 self.running == False

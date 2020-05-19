@@ -5,6 +5,7 @@ import sys
 LDI = 0b10000010
 HLT = 0b00000001
 PRN = 0b01000111
+MUL = 0b10100010
 
 class CPU:
     """Main CPU class."""
@@ -15,25 +16,11 @@ class CPU:
         self.pc = 0
         self.ram = [0] * 256
         self.running = True
-        # self.ops = {
-        #     'ADD': '10100000 00000aaa 00000bbb',
-        #     'SUB':  '10100001 00000aaa 00000bbb',
-        #     'MUL': '10100010 00000aaa 00000bbb',
-        #     'DIV':  '10100011 00000aaa 00000bbb',
-        #     'MOD':  '10100100 00000aaa 00000bbb',
-
-        #     'INC':  '01100101 00000rrr',
-        #     'DEC':  '01100110 00000rrr',
-
-        #     'CMP': '10100111 00000aaa 00000bbb',
-
-        #     'AND': '10101000 00000aaa 00000bbb',
-        #     'NOT': '01101001 00000rrr',
-        #     'OR': '10101010 00000aaa 00000bbb',
-        #     'XOR': '10101011 00000aaa 00000bbb',
-        #     'SHL': '10101100 00000aaa 00000bbb',
-        #     'SHR': '10101101 00000aaa 00000bbb'
-        # }
+        self.branchtable = {}
+        self.branchtable[LDI] = self.handle_LDI
+        self.branchtable[HLT] = self.handle_HLT
+        self.branchtable[PRN] = self.handle_PRN
+        self.branchtable[MUL] = self.handle_MUL
         # stack pointer will need an initial value
 
     def ram_read(self, MAR):
@@ -42,38 +29,43 @@ class CPU:
     def ram_write(self, MAR, MDR):
         self.ram[MAR] = MDR
 
-    def op_hit(self, operand_a, operand_b):
-        self.running = False
-        sys.exit(1)
+    def handle_LDI(self, operand_a, operand_b):
+        self.reg[operand_a] = operand_b
+        self.pc += 3
 
-    def load(self):
+    def handle_HLT(self, operand_a, operand_b):
+        self.running == False
+
+    def handle_PRN(self, operand_a, operand_b):
+        print(self.reg[operand_a])
+        self.pc += 2 
+
+    def handle_MUL(self, operand_a, operand_b):
+        self.alu('MUL', operand_a, operand_b)
+        self.pc += 3
+
+    def load(self, filename):
         """Load a program into memory."""
 
         address = 0
 
-        # For now, we've just hardcoded a program:
-
-        program = [
-            # From print8.ls8
-            0b10000010, # LDI R0,8
-            0b00000000,
-            0b00001000,
-            0b01000111, # PRN R0
-            0b00000000,
-            0b00000001, # HLT
-        ]
-
-        for instruction in program:
-            self.ram[address] = instruction
-            address += 1
-
+        with open(filename) as file:
+            for line in file:
+                string_val = line.split('#')[0].strip()
+                if string_val == '':
+                    continue
+                else:
+                    value = int(string_val, 2)
+                    self.ram[address] = value
+                    address += 1
 
     def alu(self, op, reg_a, reg_b):
         """ALU operations."""
 
         if op == "ADD":
             self.reg[reg_a] += self.reg[reg_b]
-        #elif op == "SUB": etc
+        elif op == "MUL":
+            self.reg[reg_a] *= self.reg[reg_b]
         else:
             raise Exception("Unsupported ALU operation")
 
@@ -104,17 +96,12 @@ class CPU:
         while self.running:
             # IR is the instruction register
             IR = self.ram_read(self.pc)
+            # print(IR)
 
             operand_a = self.ram_read(self.pc+1)
             operand_b = self.ram_read(self.pc+2)
 
-            if IR == LDI:
-                self.reg[operand_a] = operand_b
-                self.pc += 3
-
-            elif IR == PRN:
-                print(self.reg[operand_a])
-                self.pc += 2 
-
-            elif IR == HLT:
-                self.running == False
+            if IR == HLT:
+                self.running = False
+            else:
+                self.branchtable[IR](operand_a, operand_b)

@@ -6,6 +6,8 @@ LDI = 0b10000010
 HLT = 0b00000001
 PRN = 0b01000111
 MUL = 0b10100010
+PUSH = 0b01000101
+POP = 0b01000110
 
 class CPU:
     """Main CPU class."""
@@ -15,12 +17,16 @@ class CPU:
         self.reg = [0] * 8
         self.pc = 0
         self.ram = [0] * 256
+        # self.reg[7] = 0xF4
+        self.sp = self.reg[7]
         self.running = True
         self.branchtable = {}
         self.branchtable[LDI] = self.handle_LDI
         self.branchtable[HLT] = self.handle_HLT
         self.branchtable[PRN] = self.handle_PRN
         self.branchtable[MUL] = self.handle_MUL
+        self.branchtable[PUSH] = self.handle_PUSH
+        self.branchtable[POP] = self.handle_POP
         # stack pointer will need an initial value
 
     def ram_read(self, MAR):
@@ -43,6 +49,22 @@ class CPU:
     def handle_MUL(self, operand_a, operand_b):
         self.alu('MUL', operand_a, operand_b)
         self.pc += 3
+    
+    def handle_PUSH(self, operand_a, operand_b):
+        # Decrement the SP
+        self.sp -= 1
+        # Get the value of the register
+        value = self.reg[operand_a]
+        # Store the value in memory at SP
+        self.ram_write(self.sp, value)
+        self.pc += 2
+
+    def handle_POP(self, operand_a, operand_b):
+        # Reverse what we did in PUSH
+        value = self.ram_read(self.sp)
+        self.reg[operand_a] = value
+        self.sp += 1
+        self.pc += 2
 
     def load(self, filename):
         """Load a program into memory."""

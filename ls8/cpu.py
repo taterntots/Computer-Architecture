@@ -8,6 +8,9 @@ PRN = 0b01000111
 MUL = 0b10100010
 PUSH = 0b01000101
 POP = 0b01000110
+CALL = 0b01010000
+RET = 0b00010001
+ADD = 0b10100000
 
 class CPU:
     """Main CPU class."""
@@ -27,7 +30,9 @@ class CPU:
         self.branchtable[MUL] = self.handle_MUL
         self.branchtable[PUSH] = self.handle_PUSH
         self.branchtable[POP] = self.handle_POP
-        # stack pointer will need an initial value
+        self.branchtable[CALL] = self.handle_CALL
+        self.branchtable[RET] = self.handle_RET
+        self.branchtable[ADD] = self.handle_ADD
 
     def ram_read(self, MAR):
         return self.ram[MAR]
@@ -65,6 +70,26 @@ class CPU:
         self.reg[operand_a] = value
         self.sp += 1
         self.pc += 2
+    
+    def handle_CALL(self, operand_a, operand_b):
+        return_address = self.pc + 2
+        # Push to the stack
+        self.sp -= 1
+        self.ram[self.sp] = return_address
+        # Set the PC to the subroutine address
+        subroutine_address = self.reg[operand_a]
+        self.pc = subroutine_address
+
+    def handle_RET(self, operand_a, operand_b):
+        # Pop the return address off the stack
+        return_address = self.ram[self.sp]
+        self.sp += 1
+        # Store the return address in the PC
+        self.pc = return_address
+
+    def handle_ADD(self, operand_a, operand_b):
+        self.alu('ADD', operand_a, operand_b)
+        self.pc += 3
 
     def load(self, filename):
         """Load a program into memory."""

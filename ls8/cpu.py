@@ -11,6 +11,10 @@ POP = 0b01000110
 CALL = 0b01010000
 RET = 0b00010001
 ADD = 0b10100000
+CMP = 0b10100111
+JMP = 0b01010100
+JEQ = 0b01010101
+JNE = 0b01010110
 
 class CPU:
     """Main CPU class."""
@@ -22,6 +26,9 @@ class CPU:
         self.ram = [0] * 256
         # self.reg[7] = 0xF4
         self.sp = self.reg[7]
+        self.e_flag = 0b00000000
+        self.l_flag = 0b00000000
+        self.g_flag = 0b00000000
         self.running = True
         self.branchtable = {}
         self.branchtable[LDI] = self.handle_LDI
@@ -33,6 +40,10 @@ class CPU:
         self.branchtable[CALL] = self.handle_CALL
         self.branchtable[RET] = self.handle_RET
         self.branchtable[ADD] = self.handle_ADD
+        self.branchtable[CMP] = self.handle_CMP
+        self.branchtable[JMP] = self.handle_JMP
+        self.branchtable[JEQ] = self.handle_JEQ
+        self.branchtable[JNE] = self.handle_JNE
 
     def ram_read(self, MAR):
         return self.ram[MAR]
@@ -72,6 +83,7 @@ class CPU:
         self.pc += 2
     
     def handle_CALL(self, operand_a, operand_b):
+        # Store our return address
         return_address = self.pc + 2
         # Push to the stack
         self.sp -= 1
@@ -91,6 +103,26 @@ class CPU:
         self.alu('ADD', operand_a, operand_b)
         self.pc += 3
 
+    def handle_CMP(self, operand_a, operand_b):
+        self.alu('CMP', operand_a, operand_b)
+        self.pc += 3
+    
+    def handle_JMP(self, operand_a, operand_b):
+        # Set the PC to the address stored in the given register
+        self.pc = self.reg[operand_a]
+
+    def handle_JEQ(self, operand_a, operand_b):
+        if self.e_flag == 0b00000001:
+            self.handle_JMP(operand_a, operand_b)
+        else:
+            self.pc += 2
+    
+    def handle_JNE(self, operand_a, operand_b):
+        if self.e_flag == 0b00000000:
+            self.handle_JMP(operand_a, operand_b)
+        else:
+            self.pc += 2
+
     def load(self, filename):
         """Load a program into memory."""
 
@@ -109,10 +141,39 @@ class CPU:
     def alu(self, op, reg_a, reg_b):
         """ALU operations."""
 
-        if op == "ADD":
+        if op == 'ADD':
             self.reg[reg_a] += self.reg[reg_b]
-        elif op == "MUL":
+        elif op == 'MUL':
             self.reg[reg_a] *= self.reg[reg_b]
+        elif op == 'CMP':
+            if self.reg[reg_a] == self.reg[reg_b]:
+                self.e_flag = 0b00000001
+            elif self.reg[reg_a] < self.reg[reg_b]:
+                self.l_flag = 0b00000001
+            elif self.reg[reg_a] > self.reg[reg_b]:
+                self.g_flag = 0b00000001
+        elif op == 'AND':
+            value = self.reg[reg_a] & self.reg[reg_b]
+            self.reg[reg_a] = value
+        elif op == 'OR':
+            value = self.reg[reg_a] | self.reg[reg_b]
+            self.reg[reg_a] = value
+        elif op == 'XOR':
+            value = self.reg[reg_a] ^ self.reg[reg_b]
+            self.reg[reg_a] = value
+        elif op == 'NOT':
+            self.reg[reg_a] =~ self.reg[reg_a]
+        elif op == 'SHL':
+            self.reg[reg_a] << self.reg[reg_b]
+        elif op == 'SHR':
+            self.reg[reg_a] >> self.reg[reg_b]
+        elif op == 'MOD':
+            if self.reg[reg_b] == 0:
+                print('Error. Second op is zero')
+                self.handle_HLT()
+            else:
+                remainder = self.reg[reg_a] % self.reg[reg_b]
+                self.reg[reg_a] = remainder
         else:
             raise Exception("Unsupported ALU operation")
 
